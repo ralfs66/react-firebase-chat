@@ -1,15 +1,19 @@
 import React, { useState, useRef } from 'react'
 
+
 import { initializeApp } from 'firebase/app'
+
 import {
   addDoc,
   collection,
-  connectFirestoreEmulator,
   getFirestore,
   orderBy,
   query,
+  limitToLast,
   Timestamp,
+  serverTimestamp
 } from 'firebase/firestore'
+
 import {
   getAuth,
   GoogleAuthProvider,
@@ -24,7 +28,13 @@ import { useCollection } from 'react-firebase-hooks/firestore'
 import './App.css'
 
 const firebaseConfig = {
-  // config here
+  apiKey: "AIzaSyDDdgDZp7VuoBU_RoXC3YaXZADXEEXSd2I",
+  authDomain: "gpt-r-33c76.firebaseapp.com",
+  projectId: "gpt-r-33c76",
+  storageBucket: "gpt-r-33c76.appspot.com",
+  messagingSenderId: "469192009928",
+  appId: "1:469192009928:web:4e2208924e82c3dafd5dfd",
+  measurementId: "G-X5W9LNE6Y9"
 }
 
 // Initialize Firebase
@@ -33,7 +43,7 @@ const auth = getAuth(app)
 const db = getFirestore(app)
 
 if(window.location.hostname === 'localhost') {
-  connectFirestoreEmulator(db, 'localhost', 8080);
+  //connectFirestoreEmulator(db, 'localhost', 8080);
 }
 
 function SignIn() {
@@ -74,7 +84,7 @@ function ChatMessage({
   return (
     <div className={`message ${messageClass}`}>
       <img src={photoURL} alt={author} />
-      <p>{text}</p>
+      <p>{author+": "+text}</p>
     </div>
   )
 }
@@ -82,19 +92,20 @@ function ChatMessage({
 function ChatRoom({ user }: { user: User }) {
   const dummy = useRef() as React.MutableRefObject<HTMLSpanElement>
   const messagesRef = collection(db, 'messages')
-  const messagesQuery = query(messagesRef, orderBy('createdAt'))
+  const messagesQuery = query(messagesRef, orderBy('createdAt'), limitToLast(50))
 
   const [messages, loading, error] = useCollection(messagesQuery, {
     snapshotListenOptions: { includeMetadataChanges: true },
   })
 
   const [formValue, setFormValue] = useState('')
+  
   const sendMessage = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
     const { uid, photoURL, displayName } = user
     await addDoc(messagesRef, {
       text: formValue,
-      createdAt: Timestamp.fromDate(new Date()),
+      createdAt: serverTimestamp(),
       uid,
       photoURL,
       author: displayName,
@@ -168,7 +179,7 @@ function App() {
   return (
     <div className="App">
       <header>
-        <h1>⚛️🔥💬</h1>
+        <h1>💬</h1>
         {user && <UserBox user={user} />}
         <SignOut />
       </header>
